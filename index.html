@@ -1966,10 +1966,11 @@ footer {
     }
   });
 
-  // Email validation, then show thank-you
-  function submitJoin() {
+  // Email validation, send to Formspree, then show thank-you
+  async function submitJoin() {
     const emailEl = document.getElementById('joinEmail');
     const errorEl = document.getElementById('joinError');
+    const submitBtn = document.querySelector('.join-submit');
     const email = emailEl.value.trim();
 
     emailEl.classList.remove('error');
@@ -1984,12 +1985,42 @@ footer {
       return;
     }
 
-    // Success — close modal, show thank-you overlay
-    const num = Math.floor(Math.random() * 500) + 2600;
-    document.getElementById('waitlistNum').textContent = num.toLocaleString();
-    closeJoinModal();
-    document.getElementById('thankYou').classList.add('active');
-    emailEl.value = '';
+    // Disable button while submitting
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Joining...';
+
+    try {
+      // Send email to Formspree
+      const response = await fetch('https://formspree.io/f/xwvaajvw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          email: email,
+          source: 'Khalgosh Waitlist Landing Page'
+        })
+      });
+
+      if (response.ok) {
+        // Success — close modal, show thank-you overlay
+        const num = Math.floor(Math.random() * 500) + 2600;
+        document.getElementById('waitlistNum').textContent = num.toLocaleString();
+        closeJoinModal();
+        document.getElementById('thankYou').classList.add('active');
+        emailEl.value = '';
+      } else {
+        errorEl.textContent = 'Something went wrong. Please try again.';
+        emailEl.classList.add('error');
+      }
+    } catch (error) {
+      errorEl.textContent = 'Network error. Please check your connection and try again.';
+      emailEl.classList.add('error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Join the waitlist';
+    }
   }
 
   // Scroll reveal
